@@ -1,0 +1,316 @@
+Metadata-Version: 2.4
+Name: flaxon-debug-toolbar
+Version: 0.1.0
+Summary: Debug toolbar plugin for Flaxon framework with Three.js 3D visualizations
+Author-email: Aldane Hutchinson <aldanehutchinson5@gmail.com>
+License: MIT
+Project-URL: Homepage, https://flaxon-website.vercel.app/
+Project-URL: Repository, https://github.com/aldanedev-create/flaxon-debug-toolbar.git
+Project-URL: Issues, https://github.com/aldanedev-create/flaxon-debug-toolbar/issues.git
+Project-URL: Documentation, https://flaxon-website.vercel.app/docs.html
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Software Development :: Debuggers
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Environment :: Web Environment
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: flaxon>=0.1.7
+Requires-Dist: jinja2>=3.1.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.23.0; extra == "dev"
+Requires-Dist: ruff>=0.4.0; extra == "dev"
+Requires-Dist: mypy>=1.8.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
+Provides-Extra: standard
+Requires-Dist: flaxon[standard]; extra == "standard"
+Provides-Extra: three
+Requires-Dist: three-js>=0.1.0; extra == "three"
+Dynamic: license-file
+
+# Flaxon Debug Toolbar
+
+
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/aldanedev-create/Flaxon-Backend-Framework/main/assets/flaxon.png" alt="flaxon Logo"
+   width="200"/>
+</p>
+
+
+  
+  <p align="center">
+  <a href="https://pypi.org/project/flaxon/"><img src="https://img.shields.io/pypi/v/flaxon.svg" alt="PyPI version"></a>
+  <a href="https://github.com/aldanedev-create/Flaxon-Backend-Framework/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+  <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/badge/code%20style-ruff-000000.svg" alt="Code style: ruff"></a>
+</p>
+ 
+ 
+
+**Debug toolbar plugin for Flaxon framework with Three.js 3D visualizations.**
+
+## Overview
+
+Flaxon Debug Toolbar is a development tool that provides real-time insights into your Flaxon application's requests, responses, SQL queries, cache operations, logging, routing, middleware execution, template rendering, performance timing, and application state—all presented with beautiful 3D visualizations powered by Three.js.
+
+## Features
+
+### Core Features
+- 🔍 **Request/Response Inspection** — View headers, body, status, timing
+- 📊 **SQL Query Logging** — Track all database queries with execution time
+- 💾 **Cache Operations** — Monitor cache hits, misses, and operations
+- 📝 **Logging Panel** — View application logs during request
+- 🗺️ **Route Matching** — See which route handled the request
+- 🔗 **Middleware Stack** — View middleware execution order and timing
+- 📄 **Template Rendering** — Track template rendering time and context
+- ⏱️ **Performance Timeline** — Breakdown of request timing
+- 📦 **Variables Panel** — View request, session, state variables
+- ❌ **Error Tracking** — Capture and display errors
+
+### Three.js 3D Visualizations
+- 🎯 **3D Performance Timeline** — Animated 3D bar chart showing request timing
+- 📊 **3D SQL Query Visualization** — Interactive 3D visualization of query performance
+- 🌊 **3D Data Flow Diagrams** — Visual representation of request flow
+- 🎨 **Animated Transitions** — Smooth 3D transitions between panels
+- 📈 **Interactive 3D Charts** — 3D pie/donut charts for request statistics
+- 🔄 **Animated Status Indicators** — 3D rotating/flying indicators
+- 🌐 **3D Network Visualization** — Request/response flow visualization
+- 🔄 **Animated Panel Transitions** — 3D flip/rotate animations between panels
+
+## Installation
+
+```bash
+pip install flaxon-debug-toolbar
+
+
+
+For Three.js visualizations:
+
+bash
+pip install flaxon-debug-toolbar[three]
+Quick Start
+python
+from flaxon import Flaxon
+from flaxon_debug_toolbar import DebugToolbarPlugin
+
+app = Flaxon("my-app", debug=True)
+
+# Basic usage
+app.plugins.load_plugin(DebugToolbarPlugin())
+
+# With Three.js visualizations
+app.plugins.load_plugin(DebugToolbarPlugin(
+    three_enabled=True,
+    three_theme="dark",
+    animate_transitions=True,
+    performance_mode="balanced",
+))
+
+@app.get("/")
+async def home(request):
+    return {"message": "Check the debug toolbar!"}
+Configuration
+Environment Variables
+bash
+# Enable/disable toolbar
+DEBUG_TOOLBAR_ENABLED=true
+
+# Three.js settings
+DEBUG_TOOLBAR_THREE_ENABLED=true
+DEBUG_TOOLBAR_THREE_THEME=dark
+DEBUG_TOOLBAR_PERFORMANCE_MODE=balanced
+
+# Position
+DEBUG_TOOLBAR_POSITION=bottom
+
+# SQL threshold
+DEBUG_TOOLBAR_SQL_THRESHOLD=100
+
+# Intercept redirects
+DEBUG_TOOLBAR_INTERCEPT_REDIRECTS=true
+
+# Auto show
+DEBUG_TOOLBAR_AUTO_SHOW=true
+With Flaxon Config
+python
+app = Flaxon("my-app", config={
+    "DEBUG_TOOLBAR_ENABLED": True,
+    "DEBUG_TOOLBAR_THREE_ENABLED": True,
+    "DEBUG_TOOLBAR_THREE_THEME": "dark",
+    "DEBUG_TOOLBAR_PERFORMANCE_MODE": "balanced",
+    "DEBUG_TOOLBAR_POSITION": "bottom",
+})
+
+plugin = DebugToolbarPlugin.from_config(app.config)
+app.plugins.load_plugin(plugin)
+Advanced Configuration
+python
+app.plugins.load_plugin(DebugToolbarPlugin(
+    # Core settings
+    enabled=True,
+    auto_show=True,
+    intercept_redirects=True,
+    theme="dark",
+    position="bottom",
+    
+    # Three.js settings
+    three_enabled=True,
+    three_theme="dark",
+    animate_transitions=True,
+    performance_mode="balanced",
+    
+    # Panel selection
+    panels=[
+        "request",
+        "sql",
+        "cache",
+        "logging",
+        "routing",
+        "middleware",
+        "templates",
+        "timeline",
+        "variables",
+        "errors"
+    ],
+    
+    # SQL settings
+    sql_max_queries=100,
+    sql_slow_threshold=100,
+    
+    # Body truncation
+    body_truncate=1000,
+    
+    # Show environment
+    show_env=False,
+))
+Panels
+Panel	Description	Three.js
+Request	Request/response details	3D globe for IP geolocation
+SQL	Database queries with timing	3D bar chart of query times
+Cache	Cache operations and statistics	3D hit/miss visualization
+Logging	Application log messages	—
+Routing	Route matching information	3D network of routes
+Middleware	Middleware execution order	3D stack visualization
+Templates	Template rendering details	—
+Timeline	Request timing breakdown	3D animated timeline
+Variables	Application state variables	—
+Errors	Errors and exceptions	3D severity visualization
+Performance Modes
+Mode	Description	Features
+Performance	Maximum performance	No particles, simple geometry, low poly
+Balanced	Balanced quality/performance	Some particles, medium geometry
+Quality	Maximum quality	Full particles, high geometry, shadows
+Three.js Visualizations
+3D Performance Timeline
+Animated 3D bar chart showing each stage of request processing with particles flowing along the timeline.
+
+3D SQL Query Visualization
+Interactive 3D bar chart displaying query execution times, color-coded by query type (SELECT, INSERT, UPDATE, DELETE).
+
+3D Request Flow
+Animated particle flow through 3D nodes representing each stage of request processing.
+
+3D Middleware Stack
+3D vertical stack visualization of middleware execution with timing bars.
+
+3D Cache Visualization
+3D donut/pie chart showing cache hit/miss ratios with animated rings.
+
+3D Error Severity
+3D visualization of errors with severity indicators and animated particles.
+
+Custom Panels
+python
+from flaxon_debug_toolbar.panels.base import Panel
+
+class CustomPanel(Panel):
+    title = "Custom Panel"
+    nav_title = "Custom"
+    identifier = "custom"
+    icon = "⭐"
+    order = 50
+    has_three_scene = True
+    three_scene_class = "CustomScene"
+
+    async def process_request(self, request, data):
+        self.custom_data = {"info": "Custom data"}
+
+    async def render(self, context):
+        return "<div>Custom Panel Content</div>"
+
+# Register custom panel
+app.plugins.get("debug_toolbar").register_panel(CustomPanel())
+Screenshots
+3D Performance Timeline
+https://via.placeholder.com/800x400/1a1a2e/ffffff?text=3D+Performance+Timeline
+
+SQL Query Visualization
+https://via.placeholder.com/800x400/1a1a2e/ffffff?text=SQL+Query+Visualization
+
+Request Flow Network
+https://via.placeholder.com/800x400/1a1a2e/ffffff?text=3D+Request+Flow
+
+Testing
+bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=flaxon_debug_toolbar
+
+# Run specific test
+pytest tests/test_panels.py -v
+
+Security Considerations
+Concern	Mitigation
+
+Production exposure	Toolbar only enabled in debug mode
+Sensitive data	Redact passwords, tokens, secrets
+Performance impact	Three.js only loads when toolbar active
+Memory usage	Dispose Three.js scenes on panel switch
+GPU usage	Performance mode reduces GPU load
+Roadmap
+
+
+Version	Features
+0.1.0	Basic toolbar + Three.js timeline
+0.2.0	SQL visualization, request flow
+0.3.0	Cache visualization, routing network
+0.4.0	Performance modes, optimization
+0.5.0	Custom panel 3D scenes
+0.6.0	Real-time 3D updates, WebSocket integration
+Related Plugins
+flaxon-sentry - Sentry error tracking
+
+flaxon-oauth-google - Google OAuth
+
+flaxon-inertia - Inertia.js integration
+
+flaxon-fyr - Fyr.js integration
+
+Contributing
+Fork the repository
+
+Create a feature branch
+
+Add tests for new features
+
+Ensure all tests pass
+
+Submit a pull request
+
+License
+MIT License - See LICENSE file for details.
+
+Support
+📚 Documentation
+
+🐛 Issue Tracker
+
+💬 Discussions

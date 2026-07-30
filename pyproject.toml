@@ -1,0 +1,119 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flaxon-debug-toolbar"
+version = "0.1.0"
+description = "Debug toolbar plugin for Flaxon framework with Three.js 3D visualizations"
+readme = "README.md"
+authors = [
+    {name = "Aldane Hutchinson", email = "aldanehutchinson5@gmail.com"},
+]
+license = {text = "MIT"}
+requires-python = ">=3.11"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Debuggers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Environment :: Web Environment",
+]
+dependencies = [
+    "flaxon>=0.1.7",
+    "jinja2>=3.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.4.0",
+    "mypy>=1.8.0",
+    "pytest-cov>=4.0.0",
+]
+standard = [
+    "flaxon[standard]",
+]
+three = [
+    "three-js>=0.1.0",
+]
+
+[project.urls]
+Homepage = "https://flaxon-website.vercel.app/"
+Repository = "https://github.com/aldanedev-create/flaxon-debug-toolbar.git"
+Issues = "https://github.com/aldanedev-create/flaxon-debug-toolbar/issues.git"
+Documentation = "https://flaxon-website.vercel.app/docs.html"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+asyncio_default_fixture_loop_scope = "function"
+addopts = "-v --cov=flaxon_debug_toolbar --cov-report=term-missing"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "ANN", # flake8-annotations
+]
+ignore = [
+    "ANN101", # Missing type annotation for self
+    "ANN102", # Missing type annotation for cls
+    "ANN401", # Any type allowed
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ANN", "S101"]  # Allow assert in tests
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+show_error_codes = true
+warn_unused_ignores = true
+warn_return_any = true
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = "jinja2.*"
+ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["tests/*", "*/__pycache__/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if __name__ == .__main__.:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if False:",
+    "if TYPE_CHECKING:",
+]
+fail_under = 80
+show_missing = true
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "0.1.0"
+tag_format = "v$version"
+bump_message = "chore(release): bump version to $current_version → $new_version"
