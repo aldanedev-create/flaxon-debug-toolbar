@@ -1,6 +1,6 @@
 """Variables panel for debug toolbar."""
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from flaxon.http import Request, Response
 
@@ -13,10 +13,14 @@ class VariablesPanel(Panel):
     title = "Variables"
     nav_title = "Variables"
     identifier = "variables"
-    icon = "📦"
+    icon = "🔍"
     order = 90
     
     has_three_scene = False
+    
+    def __init__(self, app: Optional[Any] = None):
+        super().__init__()
+        self._app = app
     
     async def process_request(self, request: Request, data: Dict[str, Any]) -> Dict[str, Any]:
         """Process request data."""
@@ -29,29 +33,25 @@ class VariablesPanel(Panel):
     
     async def process_response(self, request: Request, response: Response, data: Dict[str, Any]) -> None:
         """Process response data."""
-        # Collect request variables
         request_vars = {
-            "method": request.method,
-            "path": request.path,
-            "url": str(request.url),
-            "client_ip": request.client[0] if request.client else None,
-            "headers": dict(request.headers),
-            "query": dict(request.query_params),
+            "method": getattr(request, "method", "UNKNOWN"),
+            "path": getattr(request, "path", ""),
+            "url": str(getattr(request, "url", "")),
+            "client_ip": request.client[0] if getattr(request, "client", None) else None,
+            "headers": dict(getattr(request, "headers", {})),
+            "query": dict(getattr(request, "query_params", {})),
         }
         
-        # Collect session variables
         session_vars = {}
         if hasattr(request, "session") and request.session:
             session_vars = dict(request.session)
         
-        # Collect state variables
         state_vars = {}
         if hasattr(request, "state"):
             state_vars = self._get_state_vars(request.state)
         
-        # Collect config variables
         config_vars = {}
-        app = self._get_app()
+        app = self._get_app(request)
         if app and hasattr(app, "config"):
             config_vars = dict(app.config) if isinstance(app.config, dict) else {}
         
@@ -72,15 +72,13 @@ class VariablesPanel(Panel):
         return f"""
         <div class="variables-panel">
             <div class="variables-grid">
-                <!-- Request Variables -->
                 <div class="variables-section">
-                    <h4>📨 Request Variables</h4>
+                    <h4>📥 Request Variables</h4>
                     <div class="variables-table">
                         {self._render_vars(request_vars)}
                     </div>
                 </div>
                 
-                <!-- Session Variables -->
                 <div class="variables-section">
                     <h4>🔑 Session Variables</h4>
                     <div class="variables-table">
@@ -88,17 +86,15 @@ class VariablesPanel(Panel):
                     </div>
                 </div>
                 
-                <!-- State Variables -->
                 <div class="variables-section">
-                    <h4>📦 State Variables</h4>
+                    <h4>⚙️ State Variables</h4>
                     <div class="variables-table">
                         {self._render_vars(state_vars)}
                     </div>
                 </div>
                 
-                <!-- Config Variables -->
                 <div class="variables-section">
-                    <h4>⚙️ Config Variables</h4>
+                    <h4>🛠️ Config Variables</h4>
                     <div class="variables-table">
                         {self._render_vars(config_vars)}
                     </div>
@@ -254,7 +250,7 @@ class VariablesPanel(Panel):
                 result[key] = value
         return result
     
-    def _get_state_vars(self, state) -> Dict[str, Any]:
+    def _get_state_vars(self, state: Any) -> Dict[str, Any]:
         """Get state variables."""
         if hasattr(state, "__dict__"):
             return {k: v for k, v in state.__dict__.items() if not k.startswith("_")}
@@ -262,7 +258,10 @@ class VariablesPanel(Panel):
             return state
         return {}
     
-    def _get_app(self):
-        """Get the Flaxon app instance."""
-        # This would be injected by the plugin
+    def _get_app(self, request: Optional[Request] = None) -> Optional[Any]:
+        """Get the Flaxon app instance from initialization or request."""
+        if self._app:
+            return self._app
+        if request and hasattr(request, "app"):
+            return request.app
         return None

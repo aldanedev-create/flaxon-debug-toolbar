@@ -1,6 +1,6 @@
 """Templates panel for debug toolbar."""
 
-import time
+import json
 from typing import Dict, Any, List
 from dataclasses import dataclass, field
 
@@ -50,11 +50,11 @@ class TemplatesPanel(Panel):
         templates = self._data.get("templates", [])
         count = self._data.get("count", 0)
         
-        # Build template rows
         template_rows = ""
         for i, template in enumerate(templates):
+            ctx_json = json.dumps(template.context, indent=2, default=str)
             template_rows += f"""
-                <div class="template-row">
+                <div class="template-row" onclick="toggleContext(this)" data-context='{ctx_json}'>
                     <span class="template-number">#{i + 1}</span>
                     <span class="template-name">{template.name}</span>
                     <span class="template-type">{template.type}</span>
@@ -64,7 +64,6 @@ class TemplatesPanel(Panel):
         
         return f"""
         <div class="templates-panel">
-            <!-- Statistics -->
             <div class="template-stats">
                 <div class="stat-item">
                     <span class="stat-value">{count}</span>
@@ -72,7 +71,6 @@ class TemplatesPanel(Panel):
                 </div>
             </div>
             
-            <!-- Template List -->
             <div class="template-list">
                 <h4>Rendered Templates</h4>
                 <div class="template-table">
@@ -86,10 +84,9 @@ class TemplatesPanel(Panel):
                 </div>
             </div>
             
-            <!-- Template Context (expandable) -->
-            <div class="template-context" style="display:none;">
-                <h4>Template Context</h4>
-                <pre class="context-preview"></pre>
+            <div class="template-context" id="template-context-box" style="display:none;">
+                <h4>Template Context Preview</h4>
+                <pre class="context-preview" id="context-preview-content"></pre>
             </div>
         </div>
         
@@ -155,6 +152,10 @@ class TemplatesPanel(Panel):
                 cursor: pointer;
             }}
             
+            .template-context {{
+                margin-top: 16px;
+            }}
+            
             .context-preview {{
                 background: var(--bg-primary, #1a1a2e);
                 padding: 12px;
@@ -166,6 +167,21 @@ class TemplatesPanel(Panel):
                 margin: 8px 0;
             }}
         </style>
+
+        <script>
+            function toggleContext(rowElem) {{
+                var contextBox = document.getElementById('template-context-box');
+                var preview = document.getElementById('context-preview-content');
+                var rawData = rowElem.getAttribute('data-context');
+                
+                if (contextBox.style.display === 'none' || preview.textContent !== rawData) {{
+                    preview.textContent = rawData;
+                    contextBox.style.display = 'block';
+                }} else {{
+                    contextBox.style.display = 'none';
+                }}
+            }}
+        </script>
         """
     
     def add_template(self, name: str, context: Dict[str, Any] = None, time: float = 0.0, type: str = "jinja2") -> None:

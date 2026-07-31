@@ -67,27 +67,7 @@ class DebugToolbarConfig:
 
 
 class DebugToolbarPlugin(Plugin):
-    """
-    Debug toolbar plugin for Flaxon with Three.js 3D visualizations.
-    
-    Usage:
-    
-        from flaxon import Flaxon
-        from flaxon_debug_toolbar import DebugToolbarPlugin
-        
-        app = Flaxon("my-app", debug=True)
-        
-        # Basic usage
-        app.plugins.load_plugin(DebugToolbarPlugin())
-        
-        # With Three.js visualizations
-        app.plugins.load_plugin(DebugToolbarPlugin(
-            three_enabled=True,
-            three_theme="dark",
-            animate_transitions=True,
-            performance_mode="balanced",
-        ))
-    """
+    """Debug toolbar plugin for Flaxon with Three.js 3D visualizations."""
     
     name = "debug_toolbar"
     version = "0.1.0"
@@ -113,27 +93,6 @@ class DebugToolbarPlugin(Plugin):
         show_env: bool = False,
         config: Optional[DebugToolbarConfig] = None,
     ):
-        """
-        Initialize debug toolbar plugin.
-        
-        Args:
-            enabled: Enable/disable toolbar
-            auto_show: Show toolbar automatically
-            intercept_redirects: Show toolbar on redirects
-            theme: "dark" or "light"
-            position: "bottom" or "top"
-            three_enabled: Enable Three.js visualizations
-            three_theme: "dark" or "light" for 3D scenes
-            animate_transitions: Animate panel transitions
-            performance_mode: "performance", "balanced", "quality"
-            panels: List of enabled panels
-            sql_max_queries: Max SQL queries to display
-            sql_slow_threshold: Slow query threshold (ms)
-            body_truncate: Truncate body size
-            show_env: Show environment variables
-            config: DebugToolbarConfig instance
-        """
-        # Load config
         if config:
             self.config = config
         else:
@@ -155,54 +114,43 @@ class DebugToolbarPlugin(Plugin):
                 show_env=show_env if show_env is not None else env_config.show_env,
             )
         
-        # Panel registry
         self._panels: Dict[str, Panel] = {}
         self._request_data: Dict[str, Any] = {}
         self._app = None
     
     def setup(self, app: Flaxon) -> None:
-        """
-        Setup the plugin with the Flaxon application.
-        
-        Args:
-            app: Flaxon application
-        """
+        """Setup the plugin with the Flaxon application and register panel routes."""
         self._app = app
         app.state.debug_toolbar = self
         self._register_default_panels()
+        self._register_routes(app)
     
-    def on_load(self) -> None:
-        """Called when plugin is loaded."""
-        pass
-    
-    def on_unload(self) -> None:
-        """Called when plugin is unloaded."""
-        self._request_data.clear()
-    
-    def on_startup(self) -> None:
-        """Called on application startup."""
-        pass
-    
-    def on_shutdown(self) -> None:
-        """Called on application shutdown."""
-        self._request_data.clear()
+    def _register_routes(self, app: Flaxon) -> None:
+        """Register routes to render panel content."""
+        @app.get("/_debug_toolbar/panels/{panel_id}")
+        async def render_panel_endpoint(request: Request, panel_id: str) -> Response:
+            panel = self.get_panel_by_id(panel_id)
+            if not panel:
+                return Response(content=b"Panel not found", status_code=404)
+            
+            html = await panel.render(panel._data)
+            return Response(
+                content=html.encode("utf-8"),
+                status_code=200,
+                headers={"Content-Type": "text/html; charset=utf-8"}
+            )
+
+    def on_load(self) -> None: pass
+    def on_unload(self) -> None: self._request_data.clear()
+    def on_startup(self) -> None: pass
+    def on_shutdown(self) -> None: self._request_data.clear()
     
     def add_middleware(self, app) -> Callable:
-        """
-        Add debug toolbar middleware to the app.
-        
-        Args:
-            app: ASGI application
-            
-        Returns:
-            Wrapped application
-        """
         if self.config.enabled:
             return DebugToolbarMiddleware(app, self)
         return app
     
     def _register_default_panels(self) -> None:
-        """Register default panels."""
         panel_map = {
             "request": RequestPanel,
             "sql": SQLPanel,
@@ -221,25 +169,12 @@ class DebugToolbarPlugin(Plugin):
                 self.register_panel(panel_class())
     
     def register_panel(self, panel: Panel) -> None:
-        """
-        Register a custom panel.
-        
-        Args:
-            panel: Panel instance
-        """
         self._panels[panel.identifier] = panel
     
     async def process_request(self, request: Request) -> None:
-        """
-        Process a request and collect data.
-        
-        Args:
-            request: Current request
-        """
         if not self.config.enabled:
             return
         
-        # Create request data container
         data = {
             "request_id": id(request),
             "start_time": time.time(),
@@ -247,26 +182,16 @@ class DebugToolbarPlugin(Plugin):
             "panels": {},
         }
         
-        # Process each panel
         for panel_id, panel in self._panels.items():
             try:
                 panel_data = await panel.process_request(request, data)
                 data["panels"][panel_id] = panel_data
             except Exception as e:
-                # Don't let panel errors break the request
                 data["panels"][panel_id] = {"error": str(e)}
         
-        # Store data
         self._request_data[data["request_id"]] = data
     
     async def process_response(self, request: Request, response: Response) -> None:
-        """
-        Process a response and collect data.
-        
-        Args:
-            request: Current request
-            response: Response
-        """
         if not self.config.enabled:
             return
         
@@ -279,7 +204,6 @@ class DebugToolbarPlugin(Plugin):
         data["duration"] = data["end_time"] - data["start_time"]
         data["response"] = response
         
-        # Process each panel
         for panel_id, panel in self._panels.items():
             try:
                 await panel.process_response(request, response, data)
@@ -287,42 +211,15 @@ class DebugToolbarPlugin(Plugin):
                 pass
     
     def get_panel_data(self, request_id: int) -> Optional[Dict[str, Any]]:
-        """
-        Get data for a request.
-        
-        Args:
-            request_id: Request ID
-            
-        Returns:
-            Request data or None
-        """
         return self._request_data.get(request_id)
     
     def get_enabled_panels(self) -> List[Panel]:
-        """
-        Get list of enabled panels.
-        
-        Returns:
-            List of enabled panels
-        """
         return list(self._panels.values())
     
     def is_enabled(self) -> bool:
-        """
-        Check if toolbar is enabled.
-        
-        Returns:
-            True if enabled
-        """
         return self.config.enabled
     
     def get_three_config(self) -> Dict[str, Any]:
-        """
-        Get Three.js configuration.
-        
-        Returns:
-            Three.js configuration dict
-        """
         return {
             "enabled": self.config.three_enabled,
             "theme": self.config.three_theme,
@@ -330,76 +227,18 @@ class DebugToolbarPlugin(Plugin):
             "performance_mode": self.config.performance_mode,
         }
     
-    def get_theme(self) -> str:
-        """
-        Get theme.
-        
-        Returns:
-            Theme string
-        """
-        return self.config.theme
-    
-    def get_position(self) -> str:
-        """
-        Get position.
-        
-        Returns:
-            Position string
-        """
-        return self.config.position
-    
-    def get_panel_by_id(self, panel_id: str) -> Optional[Panel]:
-        """
-        Get a panel by its ID.
-        
-        Args:
-            panel_id: Panel identifier
-            
-        Returns:
-            Panel instance or None
-        """
-        return self._panels.get(panel_id)
+    def get_theme(self) -> str: return self.config.theme
+    def get_position(self) -> str: return self.config.position
+    def get_panel_by_id(self, panel_id: str) -> Optional[Panel]: return self._panels.get(panel_id)
     
     def get_all_panel_data(self) -> Dict[str, Any]:
-        """
-        Get all panel data for the current request.
-        
-        Returns:
-            Dictionary of panel data
-        """
         return {
             panel_id: panel._data
             for panel_id, panel in self._panels.items()
             if hasattr(panel, "_data")
         }
     
-    def clear_request_data(self) -> None:
-        """Clear all stored request data."""
-        self._request_data.clear()
-    
-    def get_config(self) -> DebugToolbarConfig:
-        """
-        Get plugin configuration.
-        
-        Returns:
-            Plugin configuration
-        """
-        return self.config
-    
-    def get_panel_count(self) -> int:
-        """
-        Get number of registered panels.
-        
-        Returns:
-            Panel count
-        """
-        return len(self._panels)
-    
-    def get_panel_ids(self) -> List[str]:
-        """
-        Get list of registered panel IDs.
-        
-        Returns:
-            List of panel IDs
-        """
-        return list(self._panels.keys())
+    def clear_request_data(self) -> None: self._request_data.clear()
+    def get_config(self) -> DebugToolbarConfig: return self.config
+    def get_panel_count(self) -> int: return len(self._panels)
+    def get_panel_ids(self) -> List[str]: return list(self._panels.keys())

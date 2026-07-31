@@ -4,7 +4,6 @@ import time
 import json
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, field
-import json
 
 from flaxon.http import Request, Response
 
@@ -42,11 +41,7 @@ class SQLPanel(Panel):
     
     async def process_request(self, request: Request, data: Dict[str, Any]) -> Dict[str, Any]:
         """Process request data."""
-        # Initialize query tracking
         self._queries = []
-        
-        # Patch database connection to track queries
-        # This would integrate with SQLAlchemy, asyncpg, etc.
         
         return {
             "queries": [],
@@ -57,7 +52,6 @@ class SQLPanel(Panel):
     
     async def process_response(self, request: Request, response: Response, data: Dict[str, Any]) -> None:
         """Process response data."""
-        # Calculate statistics
         total_time = sum(q.time for q in self._queries)
         slow_queries = [q for q in self._queries if q.time > self._slow_threshold]
         
@@ -77,7 +71,6 @@ class SQLPanel(Panel):
         slow_count = self._data.get("slow_queries", 0)
         slow_threshold = self._data.get("slow_threshold", 100)
         
-        # Build query rows
         query_rows = ""
         for i, query in enumerate(queries):
             time_class = "slow" if query.time > slow_threshold else "normal"
@@ -91,7 +84,6 @@ class SQLPanel(Panel):
                 </div>
             """
         
-        # Build query data for Three.js
         query_data = []
         for q in queries[:20]:
             query_data.append({
@@ -103,12 +95,10 @@ class SQLPanel(Panel):
         
         return f"""
         <div class="sql-panel">
-            <!-- Three.js 3D Visualization -->
             <div class="three-container" id="sql-three-scene">
                 <canvas id="sql-canvas"></canvas>
             </div>
             
-            <!-- Statistics -->
             <div class="sql-stats">
                 <div class="stat-item">
                     <span class="stat-value">{count}</span>
@@ -128,7 +118,6 @@ class SQLPanel(Panel):
                 </div>
             </div>
             
-            <!-- Query List -->
             <div class="query-list">
                 <h4>Queries</h4>
                 <div class="query-table">
@@ -225,13 +214,11 @@ class SQLPanel(Panel):
         </style>
         
         <script>
-            // Three.js SQL visualization
             (function() {{
                 var container = document.getElementById('sql-three-scene');
                 var canvas = document.getElementById('sql-canvas');
                 
                 if (typeof THREE !== 'undefined' && container) {{
-                    // Initialize Three.js scene
                     var scene = new THREE.Scene();
                     scene.background = new THREE.Color(0x0d0d1a);
                     
@@ -246,7 +233,6 @@ class SQLPanel(Panel):
                     renderer.setSize(container.clientWidth, container.clientHeight);
                     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
                     
-                    // Lights
                     var ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
                     scene.add(ambientLight);
                     
@@ -254,10 +240,8 @@ class SQLPanel(Panel):
                     directionalLight.position.set(10, 20, 10);
                     scene.add(directionalLight);
                     
-                    // Query data
                     var queries = {json.dumps(query_data)};
                     
-                    // Create bars
                     var maxTime = Math.max.apply(null, queries.map(function(q) {{ return q.time; }})) || 1;
                     var barWidth = 0.8;
                     var spacing = 0.4;
@@ -276,7 +260,6 @@ class SQLPanel(Panel):
                         var x = startX + i * (barWidth + spacing);
                         var y = height / 2;
                         
-                        // Bar color based on type
                         var color = colors[query.type] || 0x888888;
                         
                         var geometry = new THREE.BoxGeometry(barWidth, height, barWidth);
@@ -290,19 +273,16 @@ class SQLPanel(Panel):
                         scene.add(bar);
                     }});
                     
-                    // Add grid
                     var gridHelper = new THREE.GridHelper(10, 10, 0x444466, 0x222244);
                     gridHelper.position.y = 0;
                     scene.add(gridHelper);
                     
-                    // Animation
                     function animate() {{
                         requestAnimationFrame(animate);
                         renderer.render(scene, camera);
                     }}
                     animate();
                     
-                    // Resize
                     window.addEventListener('resize', function() {{
                         var width = container.clientWidth;
                         var height = container.clientHeight;

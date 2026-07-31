@@ -43,7 +43,6 @@ class TimelinePanel(Panel):
         self._events = []
         self._start_time = time.time()
         
-        # Add initial event
         self.add_event("Request Start", self._start_time, self._start_time)
         
         return {
@@ -57,10 +56,8 @@ class TimelinePanel(Panel):
         self._end_time = time.time()
         total_time = self._end_time - self._start_time
         
-        # Add final event
         self.add_event("Request Complete", self._end_time, self._end_time)
         
-        # Calculate stage breakdown
         stages = self._calculate_stages()
         
         self._data = {
@@ -73,9 +70,9 @@ class TimelinePanel(Panel):
         """Render panel HTML."""
         events = self._data.get("events", [])
         total_time = self._data.get("total_time", 0)
+        total_time_ms = total_time * 1000
         stages = self._data.get("stages", {})
         
-        # Build events for Three.js
         event_data = []
         if events and len(events) > 0:
             first_start = events[0].start
@@ -87,19 +84,20 @@ class TimelinePanel(Panel):
                     "color": e.color
                 })
         
-        # Build events rows
         event_rows = ""
         for event in events:
             duration = (event.end - event.start) * 1000
+            bar_pct = (duration / total_time_ms * 100) if total_time_ms > 0 else 0
             event_rows += f"""
                 <div class="event-row">
                     <span class="event-name">{event.name}</span>
                     <span class="event-duration">{duration:.2f}ms</span>
-                    <div class="event-bar" style="width: {(duration / (total_time * 1000) * 100) if total_time > 0 else 0}%; background: {event.color};"></div>
+                    <div class="event-bar-container">
+                        <div class="event-bar" style="width: {bar_pct:.2f}%; background: {event.color};"></div>
+                    </div>
                 </div>
             """
         
-        # Build stages breakdown
         stages_html = ""
         for stage, data in stages.items():
             stages_html += f"""
@@ -112,15 +110,13 @@ class TimelinePanel(Panel):
         
         return f"""
         <div class="timeline-panel">
-            <!-- Three.js 3D Visualization -->
             <div class="three-container" id="timeline-three-scene">
                 <canvas id="timeline-canvas"></canvas>
             </div>
             
-            <!-- Statistics -->
             <div class="timeline-stats">
                 <div class="stat-item">
-                    <span class="stat-value">{total_time*1000:.2f}ms</span>
+                    <span class="stat-value">{total_time_ms:.2f}ms</span>
                     <span class="stat-label">Total Time</span>
                 </div>
                 <div class="stat-item">
@@ -129,7 +125,6 @@ class TimelinePanel(Panel):
                 </div>
             </div>
             
-            <!-- Stages Breakdown -->
             <div class="stages-breakdown">
                 <h4>Stage Breakdown</h4>
                 <div class="stages-grid">
@@ -137,7 +132,6 @@ class TimelinePanel(Panel):
                 </div>
             </div>
             
-            <!-- Event Timeline -->
             <div class="event-timeline">
                 <h4>Timeline Events</h4>
                 <div class="event-table">
@@ -238,12 +232,11 @@ class TimelinePanel(Panel):
             
             .event-name {{ flex: 1; font-family: monospace; font-size: 12px; }}
             .event-duration {{ width: 80px; text-align: right; font-family: monospace; }}
-            .event-bar-label {{ flex: 1; padding-left: 12px; }}
+            .event-bar-label, .event-bar-container {{ flex: 1; padding-left: 12px; }}
             
             .event-bar {{
                 height: 8px;
                 border-radius: 4px;
-                margin-top: 4px;
                 transition: width 0.3s ease;
             }}
             
@@ -261,13 +254,11 @@ class TimelinePanel(Panel):
         </style>
         
         <script>
-            // Three.js Timeline visualization
             (function() {{
                 var container = document.getElementById('timeline-three-scene');
                 var canvas = document.getElementById('timeline-canvas');
                 
                 if (typeof THREE !== 'undefined' && container) {{
-                    // Initialize Three.js scene
                     var scene = new THREE.Scene();
                     scene.background = new THREE.Color(0x0d0d1a);
                     
@@ -282,7 +273,6 @@ class TimelinePanel(Panel):
                     renderer.setSize(container.clientWidth, container.clientHeight);
                     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
                     
-                    // Lights
                     var ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
                     scene.add(ambientLight);
                     
@@ -290,11 +280,11 @@ class TimelinePanel(Panel):
                     directionalLight.position.set(10, 20, 10);
                     scene.add(directionalLight);
                     
-                    // Event data
                     var events = {json.dumps(event_data)};
                     
                     if (events.length > 0) {{
-                        var totalDuration = events[events.length - 1]["end"] || 1;
+                        var lastEvent = events[events.length - 1];
+                        var totalDuration = Math.max(lastEvent["end"] || 0, 0.001);
                         var barWidth = 0.6;
                         var spacing = 0.3;
                         
@@ -304,7 +294,6 @@ class TimelinePanel(Panel):
                             var height = 0.5;
                             var y = (i - events.length / 2) * (barWidth + spacing);
                             
-                            // Bar
                             var geometry = new THREE.BoxGeometry(Math.max(duration, 0.1), height, barWidth);
                             var material = new THREE.MeshStandardMaterial({{
                                 color: event["color"] || 0x4CAF50,
@@ -315,7 +304,6 @@ class TimelinePanel(Panel):
                             bar.position.set(startPos + duration / 2, y, 0);
                             scene.add(bar);
                             
-                            // Label dot
                             var dotGeo = new THREE.SphereGeometry(0.08, 8, 8);
                             var dotMat = new THREE.MeshStandardMaterial({{ color: 0xffffff }});
                             var dot = new THREE.Mesh(dotGeo, dotMat);
@@ -324,19 +312,16 @@ class TimelinePanel(Panel):
                         }});
                     }}
                     
-                    // Grid
                     var gridHelper = new THREE.GridHelper(10, 10, 0x444466, 0x222244);
                     gridHelper.position.y = -2;
                     scene.add(gridHelper);
                     
-                    // Animation
                     function animate() {{
                         requestAnimationFrame(animate);
                         renderer.render(scene, camera);
                     }}
                     animate();
                     
-                    // Resize
                     window.addEventListener('resize', function() {{
                         var width = container.clientWidth;
                         var height = container.clientHeight;
@@ -362,7 +347,7 @@ class TimelinePanel(Panel):
     def _calculate_stages(self) -> Dict[str, Dict[str, float]]:
         """Calculate stage breakdown."""
         stages = {}
-        total = self._data.get("total_time", 1) * 1000  # Convert to ms
+        total = self._data.get("total_time", 1) * 1000
         
         for event in self._events:
             duration = (event.end - event.start) * 1000
