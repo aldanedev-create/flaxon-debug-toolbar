@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flaxon-debug-toolbar"
-version = "0.1.1"
+version = "0.1.2"
 description = "Debug toolbar plugin for Flaxon framework with Three.js 3D visualizations"
 readme = "README.md"
 authors = [
