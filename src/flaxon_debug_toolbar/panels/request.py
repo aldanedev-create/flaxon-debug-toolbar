@@ -21,13 +21,24 @@ class RequestPanel(Panel):
     
     async def process_request(self, request: Request, data: Dict[str, Any]) -> Dict[str, Any]:
         """Process request data."""
+        scope = request.scope
+        scheme = scope.get("scheme", "http")
+        host = request.headers.get("host", "")
+        query_string = scope.get("query_string", b"")
+        if isinstance(query_string, bytes):
+            query_string = query_string.decode("latin-1")
+        url = f"{scheme}://{host}{request.path}"
+        if query_string:
+            url += f"?{query_string}"
+        client = scope.get("client")
+
         return {
             "method": request.method,
             "path": request.path,
-            "url": str(request.url),
+            "url": url,
             "query": dict(request.query_params),
             "headers": self._sanitize_headers(dict(request.headers)),
-            "client_ip": request.client[0] if request.client else None,
+            "client_ip": client[0] if client else None,
             "body_preview": await self._get_body_preview(request),
         }
     

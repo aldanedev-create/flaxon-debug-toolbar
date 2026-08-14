@@ -15,9 +15,8 @@ class CacheOperation:
     operation: str
     result: str
     value: Any = None
-    time: float = 0.0
     timestamp: float = field(default_factory=time.time)
-
+    time: float = 0.0
 
 class CachePanel(Panel):
     """Panel displaying cache operations."""

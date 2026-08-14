@@ -7,7 +7,7 @@ from typing import Optional, Dict, Any, List, Callable
 from dataclasses import dataclass, field
 
 from flaxon import Flaxon
-from flaxon.plugin import Plugin
+from flaxon.plugins import Plugin
 from flaxon.http import Request, Response
 
 from .middleware import DebugToolbarMiddleware
@@ -70,7 +70,7 @@ class DebugToolbarPlugin(Plugin):
     """Debug toolbar plugin for Flaxon with Three.js 3D visualizations."""
     
     name = "debug_toolbar"
-    version = "0.1.0"
+    version = "0.1.1"
     description = "Debug toolbar plugin for Flaxon with Three.js 3D visualizations"
     author = "Aldane Hutchinson"
     requires = []
@@ -117,13 +117,14 @@ class DebugToolbarPlugin(Plugin):
         self._panels: Dict[str, Panel] = {}
         self._request_data: Dict[str, Any] = {}
         self._app = None
-    
+
     def setup(self, app: Flaxon) -> None:
         """Setup the plugin with the Flaxon application and register panel routes."""
         self._app = app
         app.state.debug_toolbar = self
         self._register_default_panels()
         self._register_routes(app)
+        app.add_middleware(DebugToolbarMiddleware, plugin_instance=self)
     
     def _register_routes(self, app: Flaxon) -> None:
         """Register routes to render panel content."""

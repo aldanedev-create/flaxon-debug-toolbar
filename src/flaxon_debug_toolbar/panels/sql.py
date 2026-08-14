@@ -9,17 +9,16 @@ from flaxon.http import Request, Response
 
 from .base import Panel
 
-
 @dataclass
 class SQLQuery:
     """SQL query record."""
     sql: str
     parameters: List[Any] = field(default_factory=list)
+    timestamp: float = field(default_factory=time.time)
     time: float = 0.0
     type: str = "SELECT"
     success: bool = True
     error: Optional[str] = None
-    timestamp: float = field(default_factory=time.time)
 
 
 class SQLPanel(Panel):

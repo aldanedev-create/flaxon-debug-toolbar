@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flaxon-debug-toolbar"
-version = "0.1.0"
+version = "0.1.1"
 description = "Debug toolbar plugin for Flaxon framework with Three.js 3D visualizations"
 readme = "README.md"
 authors = [
@@ -13,7 +13,7 @@ authors = [
 license = {text = "MIT"}
 requires-python = ">=3.11"
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -45,8 +45,8 @@ three = [
 
 [project.urls]
 Homepage = "https://flaxon-website.vercel.app/"
-Repository = "https://github.com/aldanedev-create/flaxon-debug-toolbar.git"
-Issues = "https://github.com/aldanedev-create/flaxon-debug-toolbar/issues.git"
+Repository = "https://github.com/aldanedev-create/flaxon-debug-toolbar"
+Issues = "https://github.com/aldanedev-create/flaxon-debug-toolbar/issues"
 Documentation = "https://flaxon-website.vercel.app/docs.html"
 
 [tool.pytest.ini_options]
